@@ -33,7 +33,7 @@ public class FallingApplesForm : Form
   private short applesCaught = 0;
 
   // Create point
-  private PointF apple = new PointF(-diameter, -diameter); //it's initially off-screen
+  private Point apple = new Point(-diameter, -diameter); //it's initially off-screen
 
   // Create Controls
   private Button startButton = new Button();
@@ -106,16 +106,18 @@ public class FallingApplesForm : Form
 
   protected void spawnApple()
   {
+    apple.X = formWidth/2;
+
     if(fallenApples >= 10)
     {
       refreshClock.Stop();
       animationClock.Stop();
+      apple.Y = -diameter;
+      Invalidate();
     }
     else
     {
       fallenApples++;
-
-      apple.X = formWidth/2;
       apple.Y = 0;
     }
   }
