@@ -25,31 +25,38 @@ public class FallingApplesForm : Form
 {
   private const short formHeight = 1000;
   private const short formWidth = formHeight * 16/9;
-  private const short radius = 10;
-  private const short distance = 100; //100 pixels per second
+  private const short diameter = 70;
+  private const short distance = 4; //100 pixels per animationClock's tick
+  private const double refreshRate = 1000/20; //20 frames per second
+  private const double animationRate = 1000/30; //30 updates per second
+  private short fallenApples = 0; //only 10 apples will fall
   private short applesCaught = 0;
 
+  // Create point
+  private PointF apple = new PointF(-diameter, -diameter); //it's initially off-screen
+
+  // Create Controls
   private Button startButton = new Button();
   private Button exitButton = new Button();
   private Label applesCaughtCounter = new Label();
-  private Label blueSky = new Label();
   private Label controlPanel = new Label();
+
+  // Create Timers
+  private static System.Timers.Timer refreshClock = new System.Timers.Timer(refreshRate);
+  private static System.Timers.Timer animationClock = new System.Timers.Timer(animationRate);
 
   public FallingApplesForm()
   {
     // Set up texts
     Text = "Falling Apples";
-    blueSky.Text = "Falling Apples by Anthony Sam";
-    blueSky.TextAlign = ContentAlignment.TopRight;
     controlPanel.Text = "Control Panel";
     controlPanel.TextAlign = ContentAlignment.TopCenter;
     startButton.Text = "Start";
-    applesCaughtCounter.Text = "Apples Caught: " + applesCaught;
+    applesCaughtCounter.Text = "Apples caught: " + applesCaught;
     exitButton.Text = "Exit";
 
     // Set up sizes
     Size = new Size(formWidth, formHeight);
-    blueSky.Size = new Size(formWidth, formHeight*7/10);
     controlPanel.Size = new Size(formWidth, formHeight/10);
 
     // Set up locations
@@ -60,7 +67,6 @@ public class FallingApplesForm : Form
 
     // Set up colors
     BackColor = Color.Peru;
-    blueSky.BackColor = Color.Cyan;
     controlPanel.BackColor = Color.Yellow;
     applesCaughtCounter.BackColor = controlPanel.BackColor;
 
@@ -68,24 +74,79 @@ public class FallingApplesForm : Form
     Controls.Add(applesCaughtCounter);
     Controls.Add(startButton);
     Controls.Add(exitButton);
-    Controls.Add(blueSky);
     Controls.Add(controlPanel);
 
     // Assign methods to controls
+    startButton.Click += new EventHandler(start);
+    exitButton.Click += new EventHandler(exit);
+    refreshClock.Elapsed += new ElapsedEventHandler(refreshScreen);
+    animationClock.Elapsed += new ElapsedEventHandler(updateApple);
   }
 
   protected override void OnPaint(PaintEventArgs e)
   {
     Graphics graphics = e.Graphics;
 
-    graphics.FillEllipse(Brushes.Red, formWidth/2, 791, 50, 70);
+    graphics.FillRectangle(Brushes.Cyan, 0, 0, formWidth, formHeight*7/10); //blue sky
+
+    graphics.FillEllipse(Brushes.Red, apple.X, apple.Y, diameter, diameter);
 
     base.OnPaint(e);
   }
 
   protected override void OnMouseDown(MouseEventArgs e) //when the user clicks on the background (the dirt, in this case)
   {
-    // System.Console.WriteLine(e.X);
-    // System.Console.WriteLine(e.Y);
+    System.Console.WriteLine(Math.Sqrt(Math.Pow(e.X-apple.X, 2) + Math.Pow(e.Y-apple.Y, 2)));
+    if(apple.Y+diameter > formHeight*7/10 && Math.Sqrt(Math.Pow(apple.X+diameter/2-e.X, 2) + Math.Pow(apple.Y+diameter/2-e.Y, 2)) <= diameter/2) //if the apple's low enough and it's been clicked
+    {
+      applesCaughtCounter.Text = "Apples caught: " + ++applesCaught;
+      spawnApple();
+    }
+  }
+
+  protected void spawnApple()
+  {
+    if(fallenApples >= 10)
+    {
+      refreshClock.Stop();
+      animationClock.Stop();
+    }
+    else
+    {
+      fallenApples++;
+
+      apple.X = formWidth/2;
+      apple.Y = 0;
+    }
+  }
+
+  protected void start(Object sender, EventArgs events)
+  {
+    fallenApples = 0;
+    applesCaught = 0;
+
+    spawnApple();
+
+    refreshClock.Start();
+    animationClock.Start();
+  }
+
+  protected void exit(Object sender, EventArgs events)
+  {
+    System.Console.WriteLine("You clicked on the Exit button.");
+    Close();
+  }
+
+  protected void refreshScreen(Object sender, ElapsedEventArgs events)
+  {
+    Invalidate();
+  }
+
+  protected void updateApple(Object sender, ElapsedEventArgs events)
+  {
+    apple.Y += distance;
+
+    if(apple.Y+diameter > controlPanel.Top)
+      spawnApple();
   }
 }
