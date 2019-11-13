@@ -26,14 +26,14 @@ public class FallingApplesForm : Form
   private const short formHeight = 1000;
   private const short formWidth = formHeight * 16/9;
   private const short diameter = 70;
-  private const short distance = 4; //100 pixels per animationClock's tick
+  private const short distance = 2; //2 pixels per animationClock's tick
   private const double refreshRate = 1000/20; //20 frames per second
-  private const double animationRate = 1000/30; //30 updates per second
-  private short fallenApples = 0; //only 10 apples will fall
-  private short applesCaught = 0;
+  private const double animationRate = 1000/60; //60 updates per second
+  private short fallenApples;
+  private short applesCaught;
 
   // Create point
-  private Point apple = new Point(-diameter, -diameter); //it's initially off-screen
+  private Point apple = new Point(-diameter, -diameter); //the apple is initially off-screen
 
   // Create Controls
   private Button startButton = new Button();
@@ -44,6 +44,9 @@ public class FallingApplesForm : Form
   // Create Timers
   private static System.Timers.Timer refreshClock = new System.Timers.Timer(refreshRate);
   private static System.Timers.Timer animationClock = new System.Timers.Timer(animationRate);
+
+  // Create Random object
+  private Random rand = new Random();
 
   public FallingApplesForm()
   {
@@ -94,38 +97,37 @@ public class FallingApplesForm : Form
     base.OnPaint(e);
   }
 
-  protected override void OnMouseDown(MouseEventArgs e) //when the user clicks on the background (the dirt, in this case)
+  protected override void OnMouseDown(MouseEventArgs e) //when the mouse is clicked
   {
-    System.Console.WriteLine(Math.Sqrt(Math.Pow(e.X-apple.X, 2) + Math.Pow(e.Y-apple.Y, 2)));
-    if(apple.Y+diameter > formHeight*7/10 && Math.Sqrt(Math.Pow(apple.X+diameter/2-e.X, 2) + Math.Pow(apple.Y+diameter/2-e.Y, 2)) <= diameter/2) //if the apple's low enough and it's been clicked
+    if(apple.Y+diameter > formHeight*7/10 && Math.Sqrt(Math.Pow(apple.X+diameter/2-e.X, 2) + Math.Pow(apple.Y+diameter/2-e.Y, 2)) <= diameter/2) //if the apple's low enough && the apple has been clicked
     {
       applesCaughtCounter.Text = "Apples caught: " + ++applesCaught;
-      spawnApple();
+      spawnApple(); //spawn in a new apple
     }
   }
 
   protected void spawnApple()
   {
-    apple.X = formWidth/2;
-
-    if(fallenApples >= 10)
+    if(fallenApples == 10) //if 10 apples have fallen
     {
-      refreshClock.Stop();
+      refreshClock.Stop(); //stop the clocks
       animationClock.Stop();
-      apple.Y = -diameter;
+      apple.Y = -diameter; //make the apple appear off-screen
       Invalidate();
     }
     else
     {
-      fallenApples++;
+      apple.X = rand.Next(formWidth-diameter);
       apple.Y = 0;
+      fallenApples++;
     }
   }
 
   protected void start(Object sender, EventArgs events)
   {
+    // reset fallenApples and applesCaught
     fallenApples = 0;
-    applesCaught = 0;
+    applesCaughtCounter.Text = "Apples caught: " + (applesCaught=0);
 
     spawnApple();
 
@@ -146,9 +148,9 @@ public class FallingApplesForm : Form
 
   protected void updateApple(Object sender, ElapsedEventArgs events)
   {
-    apple.Y += distance;
+    apple.Y += distance; //move the apple down
 
-    if(apple.Y+diameter > controlPanel.Top)
+    if(apple.Y+diameter > controlPanel.Top) //if the apple fell on the ground, spawn a new one in
       spawnApple();
   }
 }
